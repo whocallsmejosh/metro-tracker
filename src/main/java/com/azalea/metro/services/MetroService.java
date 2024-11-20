@@ -1,28 +1,32 @@
 package com.azalea.metro.services;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-
 @Service
 public class MetroService {
+
+    Logger logger = LogManager.getLogger(MetroService.class);
 
     //TODO: encrypt in properties
     @Value("${metro.api.key}")
     private String key;
 
-    //TODO: change to upcoming rail
-    @Value("${metro.api.jstations.uri}")
-    private String jStations_uri;
+//    @Value("${metro.api.jstationinfo.uri}")
+//    private String jStationInfoUri;
 
-    public ResponseEntity<Object> getLineStations (){
-        ResponseEntity<String> responseEntity = null;
+    @Value("${metro.api.railprediction.uri}")
+    private String railPredictionUri;
+
+    public String getRailPredictionInfo (){
+        logger.debug("start getRailPredictionInfo");
+        ResponseEntity<String> responseEntity;
+        String response;
+
         try {
             RestTemplate restTemplate = new RestTemplate();
 
@@ -30,18 +34,18 @@ public class MetroService {
             header.setCacheControl("no-cache");
             header.set("api_key",key);
 
-            HttpEntity<String> requestEntity = new HttpEntity<String>(header);
-            responseEntity = restTemplate.exchange(jStations_uri, HttpMethod.GET, requestEntity, String.class);
+            HttpEntity<String> requestEntity = new HttpEntity<>(header);
+            responseEntity = restTemplate.exchange(railPredictionUri, HttpMethod.GET, requestEntity, String.class);
 
-            //TODO: fix response format, domain objects?
-            String response = responseEntity.getBody();
+            response = responseEntity.getBody();
 
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            logger.debug("end getRailPredictionInfo");
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            e.printStackTrace();
-            return new ResponseEntity<>("Error! Something went wrong...", HttpStatus.INTERNAL_SERVER_ERROR);
+            logger.error("An error occurred calling the WMATA StationPrediction API ", e);
+            return "";
         }
+
+        return response;
     }
 }
